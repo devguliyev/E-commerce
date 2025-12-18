@@ -28,7 +28,7 @@ public class Product extends BaseAccountableEntity {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "money")
+
     @Embedded
     @AttributeOverrides(
             {
@@ -43,7 +43,7 @@ public class Product extends BaseAccountableEntity {
     @JoinColumn(name="category_id")
     private Category category;
 
-    @OneToMany(mappedBy = "product")
+    @OneToMany(mappedBy = "product",fetch = FetchType.EAGER)
     private List<ProductImage> productImages;
 
 

@@ -16,7 +16,7 @@ public record GetProductDto(
         BigDecimal priceAmount,
         String currency,
         GetCategoryInProductDto category,
-        List<GetImageInProductDto> images,
+        List<GetImageInProductDto> productImages,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
