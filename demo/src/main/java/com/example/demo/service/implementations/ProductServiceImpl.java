@@ -1,23 +1,47 @@
 package com.example.demo.service.implementations;
 
+import com.example.demo.domain.entities.Category;
 import com.example.demo.domain.entities.Product;
+import com.example.demo.domain.entities.ProductImage;
+import com.example.demo.domain.enums.FileSize;
+import com.example.demo.domain.enums.FileType;
+import com.example.demo.domain.enums.ImageType;
 import com.example.demo.dto.products.GetProductDto;
 import com.example.demo.dto.products.GetProductItemDto;
 import com.example.demo.dto.products.PostProductDto;
+import com.example.demo.exception.ExistingNameException;
+import com.example.demo.exception.InvalidFileSizeException;
+import com.example.demo.exception.InvalidFileTypeException;
 import com.example.demo.mapperProfiles.ProductMapper;
+import com.example.demo.mapperProfiles.ProductMapperImpl;
+import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.ProductRepository;
+import com.example.demo.service.interfaces.FileService;
 import com.example.demo.service.interfaces.ProductService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final FileService fileService;
     private final ProductMapper productMapper;
+    private final ProductMapperImpl productMapperImpl;
+
 
     @Override
     public GetProductDto getById(Long id){
@@ -30,7 +54,46 @@ public class ProductServiceImpl implements ProductService {
     public Page<GetProductItemDto> getAll(Pageable pageable){
         return productRepository.findAll(pageable).map(productMapper::toGetProductItemDto);
     }
-    public void Create(PostProductDto productDto){
+    public void create(PostProductDto productDto){
+
+        if(productRepository.existsByName(productDto.name()))
+            throw new ExistingNameException("Product with name:"+productDto.name()+" already exists in Database");
+
+
+        List<ProductImage> productImages=new ArrayList<>();
+        productImages
+                .add(createProductImage(productDto.primaryImage(),ImageType.PRIMARY));
+
+        productDto
+                .images()
+                .forEach(img->productImages
+                        .add(createProductImage(img,ImageType.SECONDARY)));
+
+        Product product=productMapperImpl.toEntity(productDto);
+        product.setProductImages(productImages);
+        Category category=categoryRepository
+                .findById(productDto.categoryId())
+                        .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+
+        product.setCategory(category);
+
+        product.setCreatedAt(LocalDateTime.now());
+
+        productRepository.save(product);
+
+    }
+    private ProductImage createProductImage(MultipartFile file, ImageType type){
+        if(!fileService.validateSize(file, FileSize.MB,1))
+            throw new InvalidFileSizeException("File size is invalid");
+
+        if(!fileService.validateType(file,FileType.IMAGE))
+            throw new InvalidFileTypeException("File type is invalid");
+
+        ProductImage productImage=new ProductImage();
+        productImage.setImage(fileService.createFile(file));
+        productImage.setImageType(type);
+
+        return productImage;
 
     }
 

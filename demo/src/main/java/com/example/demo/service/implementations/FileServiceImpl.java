@@ -3,14 +3,25 @@ package com.example.demo.service.implementations;
 import com.example.demo.domain.enums.FileSize;
 import com.example.demo.domain.enums.FileType;
 import com.example.demo.service.interfaces.FileService;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 @Service
 public class FileServiceImpl implements FileService {
 
+
+    private final Path path;
+    public FileServiceImpl (@Value("${file.upload-dir}") String root){
+        path=Paths.get(root).toAbsolutePath().normalize();
+    }
     public boolean validateType(MultipartFile file, FileType type){
         if(file==null)
             throw new IllegalArgumentException("File is null");
@@ -39,10 +50,13 @@ public class FileServiceImpl implements FileService {
         String newFileName= UUID.randomUUID().toString()+   //random string
                 StringUtils.getFilenameExtension(file.getOriginalFilename()); //subtracting extension of fileName
 
-         return null;
-
-
-
-
+        Path filePath=path.resolve(newFileName);
+       try {
+           file.transferTo(filePath.toFile());
+       }catch (IOException e){
+           throw new UncheckedIOException("Failed to save file",e);
+       }
+//        Files.copy(file.getInputStream(),filePath, StandardCopyOption.REPLACE_EXISTING);
+         return newFileName;
     }
 }
