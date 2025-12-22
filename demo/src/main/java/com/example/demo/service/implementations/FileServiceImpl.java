@@ -47,7 +47,7 @@ public class FileServiceImpl implements FileService {
     }
     public String createFile(MultipartFile file){
 
-        String newFileName= UUID.randomUUID().toString()+   //random string
+        String newFileName= UUID.randomUUID().toString()+ "." +   //random string
                 StringUtils.getFilenameExtension(file.getOriginalFilename()); //subtracting extension of fileName
 
         Path filePath=path.resolve(newFileName);

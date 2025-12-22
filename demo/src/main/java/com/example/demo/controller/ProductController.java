@@ -38,11 +38,12 @@ public class ProductController {
           return productService.getById(id).thenApplyAsync(ResponseEntity::ok) ;
         }
 
-        @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         public CompletableFuture<ResponseEntity<Void>> post(
-                @RequestParam PostProductDto productDto
+                @ModelAttribute PostProductDto productDto
         ) {
-            return   productService.create(productDto).thenApplyAsync(ResponseEntity::ok);
+            return productService.create(productDto)
+                    .thenApply(v -> ResponseEntity.ok().build());
         }
 
 
