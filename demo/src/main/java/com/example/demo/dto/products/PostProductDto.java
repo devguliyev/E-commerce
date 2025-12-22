@@ -1,6 +1,7 @@
 package com.example.demo.dto.products;
 
 import com.example.demo.domain.enums.Currency;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -16,7 +17,9 @@ public record PostProductDto(
         @Positive BigDecimal priceAmount,
         @NotNull Currency currency,
         @NotNull Long categoryId,
+
         @NotNull MultipartFile primaryImage,
+
         List<MultipartFile> images
         ) {
 }

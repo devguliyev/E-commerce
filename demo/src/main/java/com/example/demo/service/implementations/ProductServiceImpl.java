@@ -22,6 +22,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -43,18 +45,24 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapperImpl productMapperImpl;
 
 
-    @Override
-    public GetProductDto getById(Long id){
-        if(id==null) throw new IllegalArgumentException("Id is null");
+    @Async
+    public CompletableFuture<GetProductDto> getById(Long id){
+        if(id==null)
+            throw new IllegalArgumentException("Id is null");
+
         Product product=productRepository.findById(id).orElseThrow();
 
-        return productMapper.toGetProductDto(product);
+        return CompletableFuture.completedFuture(productMapper.toGetProductDto(product)) ;
 
     }
-    public Page<GetProductItemDto> getAll(Pageable pageable){
-        return productRepository.findAll(pageable).map(productMapper::toGetProductItemDto);
+
+    @Async
+    public CompletableFuture<Page<GetProductItemDto>> getAll(Pageable pageable){
+
+        return CompletableFuture.completedFuture(productRepository.findAll(pageable).map(productMapper::toGetProductItemDto));
     }
-    public void create(PostProductDto productDto){
+    @Async
+    public CompletableFuture<Void> create(PostProductDto productDto){
 
         if(productRepository.existsByName(productDto.name()))
             throw new ExistingNameException("Product with name:"+productDto.name()+" already exists in Database");
@@ -80,6 +88,8 @@ public class ProductServiceImpl implements ProductService {
         product.setCreatedAt(LocalDateTime.now());
 
         productRepository.save(product);
+
+        return CompletableFuture.completedFuture(null);
 
     }
     private ProductImage createProductImage(MultipartFile file, ImageType type){
