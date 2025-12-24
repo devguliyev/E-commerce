@@ -9,9 +9,10 @@ import com.example.demo.domain.enums.ImageType;
 import com.example.demo.dto.products.GetProductDto;
 import com.example.demo.dto.products.GetProductItemDto;
 import com.example.demo.dto.products.PostProductDto;
-import com.example.demo.exception.ExistingNameException;
+import com.example.demo.exception.EntityAlreadyExistsException;
 import com.example.demo.exception.InvalidFileSizeException;
 import com.example.demo.exception.InvalidFileTypeException;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.ProductMapper;
 import com.example.demo.mapperProfiles.ProductMapperImpl;
 import com.example.demo.repository.CategoryRepository;
@@ -26,12 +27,10 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -50,7 +49,9 @@ public class ProductServiceImpl implements ProductService {
         if(id==null)
             throw new IllegalArgumentException("Id is null");
 
-        Product product=productRepository.findById(id).orElseThrow();
+        Product product=productRepository
+                .findById(id)
+                .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
 
         return CompletableFuture.completedFuture(productMapper.toGetProductDto(product)) ;
 
@@ -58,14 +59,14 @@ public class ProductServiceImpl implements ProductService {
 
     @Async
     public CompletableFuture<Page<GetProductItemDto>> getAll(Pageable pageable){
-
+        
         return CompletableFuture.completedFuture(productRepository.findAll(pageable).map(productMapper::toGetProductItemDto));
     }
     @Async
     public CompletableFuture<Void> create(PostProductDto productDto){
 
         if(productRepository.existsByName(productDto.name()))
-            throw new ExistingNameException("Product with name:"+productDto.name()+" already exists in Database");
+            throw new EntityAlreadyExistsException("Product with name:"+productDto.name()+" already exists in Database");
 
 
         List<ProductImage> productImages=new ArrayList<>();
