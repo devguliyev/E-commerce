@@ -13,6 +13,7 @@ public class InvalidFileSizeException extends BusinessException {
     public InvalidFileSizeException(){
         this(DEFAULT_MESSAGE);
     }
+    
     //for messages created in service
     public InvalidFileSizeException(String message) {
         super(

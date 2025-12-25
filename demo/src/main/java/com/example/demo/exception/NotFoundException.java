@@ -5,9 +5,11 @@ import org.springframework.http.HttpStatus;
 
 public class NotFoundException extends BusinessException {
     private static final String DEFAULT_MESSAGE="Entity not found";
+
     public NotFoundException(){
         this(DEFAULT_MESSAGE);
     }
+
     public NotFoundException(String message){
         super(
                 "ENTITY_NOT_FOUND",
