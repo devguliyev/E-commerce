@@ -44,7 +44,8 @@ public class ProductController {
         }
 
         @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-        public CompletableFuture<ResponseEntity<Void>> post(@ModelAttribute PostProductDto productDto
+        public CompletableFuture<ResponseEntity<Void>> post(
+                @Valid @ModelAttribute PostProductDto productDto
         ) {
             return productService.create(productDto)
                     .thenApply(v -> ResponseEntity.ok().build());

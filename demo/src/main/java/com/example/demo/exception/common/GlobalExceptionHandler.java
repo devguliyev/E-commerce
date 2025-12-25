@@ -45,7 +45,12 @@ public class GlobalExceptionHandler{
             HttpServletRequest request
 
     ){
-        String errors=extractValidationErrors(ex).toString();
+        String errors=extractValidationErrors(ex).entrySet().
+                stream()
+                .map(
+                e->e.getKey()+":"+e.getValue())
+                .collect(Collectors.joining(";"));
+
 
 
         return ResponseEntity
