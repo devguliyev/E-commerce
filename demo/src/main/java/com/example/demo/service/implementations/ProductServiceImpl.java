@@ -67,18 +67,16 @@ public class ProductServiceImpl implements ProductService {
         if(productRepository.existsByName(productDto.name()))
             throw new EntityAlreadyExistsException("Product with name:"+productDto.name()+" already exists in Database");
 
-
-        List<ProductImage> productImages=new ArrayList<>();
-        productImages
-                .add(createProductImage(productDto.primaryImage(),ImageType.PRIMARY));
-
+        Product product=productMapper.toEntity(productDto);
+        product.setProductImages(new ArrayList<>());
+        product.getProductImages()
+                .add(createProductImage(productDto.primaryImage(),ImageType.PRIMARY,product));
         productDto
                 .images()
-                .forEach(img->productImages
-                        .add(createProductImage(img,ImageType.SECONDARY)));
+                .forEach(img->product
+                        .getProductImages()
+                        .add(createProductImage(img,ImageType.SECONDARY,product)));
 
-        Product product=productMapper.toEntity(productDto);
-        product.setProductImages(productImages);
         Category category=categoryRepository
                 .findById(productDto.categoryId())
                         .orElseThrow(() -> new EntityNotFoundException("Category not found"));
@@ -92,7 +90,7 @@ public class ProductServiceImpl implements ProductService {
         return CompletableFuture.completedFuture(null);
 
     }
-    private ProductImage createProductImage(MultipartFile file, ImageType type){
+    private ProductImage createProductImage(MultipartFile file, ImageType type, Product product){
         if(!fileService.validateSize(file, FileSize.MB,1))
             throw new InvalidFileSizeException("File size is invalid");
 
@@ -102,6 +100,8 @@ public class ProductServiceImpl implements ProductService {
         ProductImage productImage=new ProductImage();
         productImage.setImage(fileService.createFile(file));
         productImage.setImageType(type);
+        productImage.setProduct(product);
+        productImage.setCreatedAt(LocalDateTime.now());
 
         return productImage;
 

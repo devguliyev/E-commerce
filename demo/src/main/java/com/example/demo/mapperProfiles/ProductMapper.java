@@ -2,8 +2,11 @@ package com.example.demo.mapperProfiles;
 
 
 import com.example.demo.domain.entities.Product;
+import com.example.demo.domain.entities.ProductImage;
 import com.example.demo.domain.enums.Currency;
+import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.valueObjects.Money;
+import com.example.demo.dto.productImages.GetImageInProductDto;
 import com.example.demo.dto.products.GetProductDto;
 import com.example.demo.dto.products.GetProductInCategoryDto;
 import com.example.demo.dto.products.GetProductItemDto;
@@ -18,15 +21,17 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = ProductImageMapper.class)
 public interface ProductMapper {
 
     @Mapping(target = "priceAmount",source = "product",qualifiedByName = "toPriceAmount")
     @Mapping(target = "currency",source = "product",qualifiedByName = "toCurrencyString")
+
     GetProductDto toGetProductDto(Product product);
 
     @Mapping(target = "priceAmount",source = "product",qualifiedByName = "toPriceAmount")
     @Mapping(target = "currency",source = "product",qualifiedByName = "toCurrencyString")
+    @Mapping(target="primaryImage",source = "productImages",qualifiedByName = "mainImage")
     GetProductItemDto toGetProductItemDto(Product product);
 
     GetProductInCategoryDto toGetProductInCategoryDto(Product product);
