@@ -41,7 +41,6 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final FileService fileService;
     private final ProductMapper productMapper;
-    private final ProductMapperImpl productMapperImpl;
 
 
     @Async
@@ -78,7 +77,7 @@ public class ProductServiceImpl implements ProductService {
                 .forEach(img->productImages
                         .add(createProductImage(img,ImageType.SECONDARY)));
 
-        Product product=productMapperImpl.toEntity(productDto);
+        Product product=productMapper.toEntity(productDto);
         product.setProductImages(productImages);
         Category category=categoryRepository
                 .findById(productDto.categoryId())

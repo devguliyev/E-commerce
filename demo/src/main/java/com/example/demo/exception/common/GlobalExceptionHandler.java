@@ -47,8 +47,7 @@ public class GlobalExceptionHandler{
     ){
         String errors=extractValidationErrors(ex).entrySet().
                 stream()
-                .map(
-                e->e.getKey()+":"+e.getValue())
+                .map(e->e.getKey()+":"+e.getValue())
                 .collect(Collectors.joining(";"));
 
 
@@ -84,7 +83,7 @@ public class GlobalExceptionHandler{
                         )
                 );
 
-//        "Unexpected internal exception",
+
     }
 
     private Map<String,String> extractValidationErrors(Exception ex){

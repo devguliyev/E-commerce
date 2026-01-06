@@ -5,8 +5,6 @@ import com.example.demo.dto.products.GetProductItemDto;
 import com.example.demo.dto.products.PostProductDto;
 import com.example.demo.service.interfaces.ProductService;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

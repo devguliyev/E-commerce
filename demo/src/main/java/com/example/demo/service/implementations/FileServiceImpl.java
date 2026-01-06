@@ -4,6 +4,10 @@ import com.example.demo.domain.enums.FileSize;
 import com.example.demo.domain.enums.FileType;
 import com.example.demo.service.interfaces.FileService;
 
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -15,13 +19,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 @Service
+@RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
 
 
-    private final Path path;
-    public FileServiceImpl (@Value("${file.upload-dir}") String root){
-        path=Paths.get(root).toAbsolutePath().normalize();
-    }
+//    private final Path path;
+//    public FileServiceImpl (@Value("${file.upload-dir}") String root){
+//        path=Paths.get(root).toAbsolutePath().normalize();
+//    }
+
+    @Value("${minio.bucket}")
+    private String bucket;
+    private final MinioClient minioClient;
     public boolean validateType(MultipartFile file, FileType type){
         if(file==null)
             throw new IllegalArgumentException("File is null");
@@ -45,18 +54,44 @@ public class FileServiceImpl implements FileService {
             default -> false;
         };
     }
+
+
     public String createFile(MultipartFile file){
 
         String newFileName= UUID.randomUUID().toString()+ "." +   //random string
                 StringUtils.getFilenameExtension(file.getOriginalFilename()); //subtracting extension of fileName
 
-        Path filePath=path.resolve(newFileName);
-       try {
-           file.transferTo(filePath.toFile());
-       }catch (IOException e){
-           throw new UncheckedIOException("Failed to save file",e);
-       }
-//        Files.copy(file.getInputStream(),filePath, StandardCopyOption.REPLACE_EXISTING);
+        try{
+            minioClient.putObject(
+                    PutObjectArgs
+                            .builder()
+                            .bucket(bucket)
+                            .object(newFileName)
+                            .stream(file.getInputStream(),
+                                    file.getSize(),
+                                    -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+        }catch(Exception e){
+            throw new RuntimeException(e);
+        }
+
          return newFileName;
     }
+
+//    public String createFile(MultipartFile file){
+//
+//        String newFileName= UUID.randomUUID().toString()+ "." +   //random string
+//                StringUtils.getFilenameExtension(file.getOriginalFilename()); //subtracting extension of fileName
+//
+//        Path filePath=path.resolve(newFileName);
+//        try {
+//            file.transferTo(filePath.toFile());
+//        }catch (IOException e){
+//            throw new UncheckedIOException("Failed to save file",e);
+//        }
+////        Files.copy(file.getInputStream(),filePath, StandardCopyOption.REPLACE_EXISTING);
+//        return newFileName;
+//    }
 }
