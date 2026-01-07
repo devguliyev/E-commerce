@@ -1,7 +1,12 @@
 package com.example.demo.service.implementations;
 
+import com.example.demo.config.UploadPolicy;
 import com.example.demo.domain.enums.FileSize;
 import com.example.demo.domain.enums.FileType;
+import com.example.demo.domain.enums.UploadContext;
+import com.example.demo.dto.files.FileInfoDto;
+import com.example.demo.exception.InvalidFileSizeException;
+import com.example.demo.exception.InvalidFileTypeException;
 import com.example.demo.service.interfaces.FileService;
 
 import io.minio.MinioClient;
@@ -17,7 +22,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
@@ -31,19 +39,31 @@ public class FileServiceImpl implements FileService {
     @Value("${minio.bucket}")
     private String bucket;
     private final MinioClient minioClient;
-    public boolean validateType(MultipartFile file, FileType type){
+    private final UploadPolicy uploadPolicy;
+
+    private boolean validateType(MultipartFile file, FileType type, List<String> minorTypes){
         if(file==null)
             throw new IllegalArgumentException("File is null");
 
-        return switch (type){
-            case FileType.IMAGE -> file.getContentType().contains("image/");
-            case FileType.VIDEO -> file.getContentType().contains("video/");
-            case FileType.AUDIO -> file.getContentType().contains("audio/");
-            default -> false;
+
+        String major=switch (type){
+            case FileType.IMAGE -> "image/";
+            case FileType.VIDEO -> "video/";
+            case FileType.AUDIO -> "audio/";
+            default -> throw new InvalidFileTypeException("File type is invalid");
         };
 
+        return minorTypes.stream().anyMatch(minor->file.getContentType().contains(major+minor));
+
+//        return switch (type){
+//            case FileType.IMAGE ->  file.getContentType().contains("image/");
+//            case FileType.VIDEO -> file.getContentType().contains("video/");
+//            case FileType.AUDIO -> file.getContentType().contains("audio/");
+//            default -> false;
+//        };
+
     }
-    public boolean validateSize(MultipartFile file, FileSize size,int value){
+    private boolean validateSize(MultipartFile file, FileSize size,int value){
         if(file==null)
             throw new IllegalArgumentException("File is null");
 
@@ -55,18 +75,49 @@ public class FileServiceImpl implements FileService {
         };
     }
 
+    private void validateRule(MultipartFile file, UploadContext context){
+        var rule=uploadPolicy.getRule(context);
 
-    public String createFile(MultipartFile file){
+        if(!validateSize(file,rule.getFileSize(),rule.getSizeValue()))
+            throw new InvalidFileSizeException("File size is invalid");
 
-        String newFileName= UUID.randomUUID().toString()+ "." +   //random string
-                StringUtils.getFilenameExtension(file.getOriginalFilename()); //subtracting extension of fileName
+        if(!validateType(file,rule.getFileType(),rule.getMinorTypes()))
+            throw new InvalidFileTypeException("File type is invalid");
 
+    }
+
+    private FileInfoDto createFile(MultipartFile file, UploadContext context){
+
+        String newFileName=generateUniqueFileName(file.getOriginalFilename()); //generates unique filename
+
+        saveToStorage(file,newFileName);
+
+         return FileInfoDto.builder()
+                 .fileName(newFileName)
+                 .context(context)
+                 .build();
+    }
+
+    public FileInfoDto upload(MultipartFile file, UploadContext context){
+        validateRule(file,context); //throw exception if validation fails
+        return createFile(file,context);
+    }
+
+    public List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context){
+       files.forEach(file->validateRule(file,context));//throw exception if validation fails
+
+       return files.stream()
+                .map(f->createFile(f,context))
+                .collect(Collectors.toList());
+    }
+
+    private void saveToStorage(MultipartFile file,String fileName){
         try{
             minioClient.putObject(
                     PutObjectArgs
                             .builder()
                             .bucket(bucket)
-                            .object(newFileName)
+                            .object(fileName)
                             .stream(file.getInputStream(),
                                     file.getSize(),
                                     -1)
@@ -76,8 +127,11 @@ public class FileServiceImpl implements FileService {
         }catch(Exception e){
             throw new RuntimeException(e);
         }
+    }
 
-         return newFileName;
+    private String generateUniqueFileName(String originalFileName ){
+        return UUID.randomUUID().toString()+ "." +   //random string
+                StringUtils.getFilenameExtension(originalFileName); //subtracting extension of fileName
     }
 
 //    public String createFile(MultipartFile file){
