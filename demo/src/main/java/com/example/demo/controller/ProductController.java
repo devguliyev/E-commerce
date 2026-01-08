@@ -26,24 +26,24 @@ public class ProductController {
 
 
     @GetMapping
-    public CompletableFuture<ResponseEntity<Page<GetProductItemDto>>> get(
+    public ResponseEntity<Page<GetProductItemDto>> get(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "8") int pageSize
     ){
-        Pageable pageable= PageRequest.of(page,pageSize);
-        return productService.getAll(pageable).thenApplyAsync(ResponseEntity::ok);
+
+        return ResponseEntity.ok(productService.getAll(page,pageSize));
     }
 
        @GetMapping("/{id}")
-        public CompletableFuture<ResponseEntity<GetProductDto>> get(
+        public ResponseEntity<GetProductDto> get(
                 @PathVariable Long id
         ){
-          return productService.getById(id).thenApplyAsync(ResponseEntity::ok) ;
+          return ResponseEntity.ok(productService.getById(id));
         }
 
-        @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PostMapping
         public CompletableFuture<ResponseEntity<Void>> post(
-                @Valid @ModelAttribute PostProductDto productDto
+                @Valid @RequestBody PostProductDto productDto
         ) {
             return productService.create(productDto)
                     .thenApply(v -> ResponseEntity.ok().build());

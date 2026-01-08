@@ -60,6 +60,9 @@ public class FileServiceImpl implements FileService {
             default -> throw new InvalidFileTypeException("File type is invalid");
         };
 
+        if(minorTypes !=null)
+            return file.getContentType().contains(major);
+
         return minorTypes.stream().anyMatch(minor->file.getContentType().contains(major+minor));
 
 //        return switch (type){

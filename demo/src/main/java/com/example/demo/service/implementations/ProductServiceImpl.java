@@ -24,6 +24,7 @@ import com.example.demo.service.interfaces.ProductService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -45,8 +46,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
 
 
-    @Async
-    public CompletableFuture<GetProductDto> getById(Long id){
+
+    public GetProductDto getById(Long id){
         if(id==null)
             throw new IllegalArgumentException("Id is null");
 
@@ -54,14 +55,15 @@ public class ProductServiceImpl implements ProductService {
                 .findById(id)
                 .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
 
-        return CompletableFuture.completedFuture(productMapper.toGetProductDto(product)) ;
+        return productMapper.toGetProductDto(product);
 
     }
 
-    @Async
-    public CompletableFuture<Page<GetProductItemDto>> getAll(Pageable pageable){
-        
-        return CompletableFuture.completedFuture(productRepository.findAll(pageable).map(productMapper::toGetProductItemDto));
+
+    public Page<GetProductItemDto> getAll(int page, int pageSize){
+
+        Pageable pageable=PageRequest.of(page,pageSize);
+        return productRepository.findAll(pageable).map(productMapper::toGetProductItemDto);
     }
     @Async
     public CompletableFuture<Void> create(PostProductDto productDto){

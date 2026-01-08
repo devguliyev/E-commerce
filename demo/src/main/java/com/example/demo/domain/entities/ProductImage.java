@@ -30,7 +30,7 @@ public class ProductImage extends BaseAccountableEntity {
     private Product product;
 
     @OneToOne(fetch=FetchType.LAZY)
-    @JoinColumn(name = "file_entity_id",nullable = false,unique = true)
+    @JoinColumn(name = "file_entity_id",unique = true)
     private FileEntity fileEntity;
 
 

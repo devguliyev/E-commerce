@@ -10,7 +10,7 @@ import lombok.Setter;
 
 
 @Entity
-@Table(name = "media_files")
+@Table(name = "file_entities")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -34,5 +34,7 @@ public class FileEntity extends BaseAccountableEntity {
 
     @Enumerated(EnumType.STRING)
     private FileStatus status;
+
+
 
 }

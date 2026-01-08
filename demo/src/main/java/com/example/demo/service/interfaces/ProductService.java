@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 
 @Service
 public interface ProductService {
-    CompletableFuture<GetProductDto> getById(Long id);
-    CompletableFuture<Page<GetProductItemDto>> getAll(Pageable pageable);
+    GetProductDto getById(Long id);
+    Page<GetProductItemDto> getAll(int page, int pageSize);
     CompletableFuture<Void> create(PostProductDto productDto);
 }

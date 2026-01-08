@@ -14,6 +14,7 @@ import java.util.List;
 public interface ProductImageMapper {
 
     @Mapping(target = "imageType",source = "productImage",qualifiedByName = "toImageTypeString")
+    @Mapping(target = "image",source = "productImage",qualifiedByName = "toImageString")
     GetImageInProductDto toGetImageInProductDto(ProductImage productImage);
 
 //    @Mapping(target = "mainImage",source = "productImage",qualifiedByName = "toImageTypeString")
@@ -25,8 +26,13 @@ public interface ProductImageMapper {
         return productImage.getImageType().toString();
     }
 
+    @Named("toImageString")
+    default String toImageString(ProductImage productImage) {
+        return productImage.getFileEntity().getPath().toString();
+    }
 
-        @Named("mainImage")
+
+    @Named("mainImage")
         default String toMainGetProductDto(List<ProductImage> productImages){
             return productImages
                     .stream()
