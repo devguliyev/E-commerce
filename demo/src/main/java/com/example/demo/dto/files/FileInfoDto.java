@@ -4,5 +4,5 @@ import com.example.demo.domain.enums.UploadContext;
 import lombok.Builder;
 
 @Builder
-public record FileInfoDto(String fileName, UploadContext context){
+public record FileInfoDto(Long id,String storedName){
 }

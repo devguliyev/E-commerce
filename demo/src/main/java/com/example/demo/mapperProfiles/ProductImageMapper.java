@@ -32,7 +32,7 @@ public interface ProductImageMapper {
                     .stream()
                     .filter(pi->pi.getImageType()==ImageType.PRIMARY)
                     .findFirst()
-                    .map(ProductImage::getImage)
+                    .map(p->p.getFileEntity().getPath())
                     .orElse(null)
                     ;
         }

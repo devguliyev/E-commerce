@@ -14,9 +14,9 @@ import java.util.UUID;
 
 public interface FileService {
 
-     public FileInfoDto upload(MultipartFile file, UploadContext context);
+     FileInfoDto upload(MultipartFile file, UploadContext context);
 
-     public List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context);
+     List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context);
 
 
 //     boolean validateType(MultipartFile file, FileType type);

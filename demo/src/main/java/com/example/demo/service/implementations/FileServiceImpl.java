@@ -1,12 +1,16 @@
 package com.example.demo.service.implementations;
 
 import com.example.demo.config.UploadPolicy;
+import com.example.demo.domain.entities.FileEntity;
 import com.example.demo.domain.enums.FileSize;
+import com.example.demo.domain.enums.FileStatus;
 import com.example.demo.domain.enums.FileType;
 import com.example.demo.domain.enums.UploadContext;
 import com.example.demo.dto.files.FileInfoDto;
 import com.example.demo.exception.InvalidFileSizeException;
 import com.example.demo.exception.InvalidFileTypeException;
+import com.example.demo.mapperProfiles.FileEntityMapper;
+import com.example.demo.repository.FileRepository;
 import com.example.demo.service.interfaces.FileService;
 
 import io.minio.MinioClient;
@@ -22,6 +26,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -40,6 +45,8 @@ public class FileServiceImpl implements FileService {
     private String bucket;
     private final MinioClient minioClient;
     private final UploadPolicy uploadPolicy;
+    private final FileRepository fileRepository;
+    private final FileEntityMapper fileEntityMapper;
 
     private boolean validateType(MultipartFile file, FileType type, List<String> minorTypes){
         if(file==null)
@@ -86,44 +93,62 @@ public class FileServiceImpl implements FileService {
 
     }
 
-    private FileInfoDto createFile(MultipartFile file, UploadContext context){
+    private FileEntity createFile(MultipartFile file, UploadContext context){
 
         String newFileName=generateUniqueFileName(file.getOriginalFilename()); //generates unique filename
 
-        saveToStorage(file,newFileName);
+        String path=saveToStorage(file,newFileName);
+        FileEntity fileEntity=new FileEntity(
+                file.getOriginalFilename(),
+                newFileName,
+                file.getContentType(),
+                file.getSize(),
+                path,
+                FileStatus.TEMP
+        );
+        fileRepository.save(fileEntity);
 
-         return FileInfoDto.builder()
-                 .fileName(newFileName)
-                 .context(context)
-                 .build();
+        return fileEntity;
     }
 
     public FileInfoDto upload(MultipartFile file, UploadContext context){
+
         validateRule(file,context); //throw exception if validation fails
-        return createFile(file,context);
+        FileEntity fileEntity=createFile(file,context);
+
+        return fileEntityMapper.toFileInfoDto(fileEntity);
     }
 
     public List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context){
        files.forEach(file->validateRule(file,context));//throw exception if validation fails
 
        return files.stream()
-                .map(f->createFile(f,context))
+                .map(f->fileEntityMapper.toFileInfoDto(createFile(f,context)))
                 .collect(Collectors.toList());
     }
 
-    private void saveToStorage(MultipartFile file,String fileName){
+    private String saveToStorage(MultipartFile file,String fileName){
+        LocalDate date=LocalDate.now();
+        String path="uploads/%d/%02d/%02d/%s"
+                .formatted(
+                        date.getYear(),
+                        date.getMonthValue(),
+                        date.getDayOfMonth(),
+                        fileName
+                );
         try{
             minioClient.putObject(
                     PutObjectArgs
                             .builder()
                             .bucket(bucket)
-                            .object(fileName)
+                            .object(path)
                             .stream(file.getInputStream(),
                                     file.getSize(),
                                     -1)
                             .contentType(file.getContentType())
                             .build()
             );
+            return  path;
         }catch(Exception e){
             throw new RuntimeException(e);
         }

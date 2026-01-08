@@ -17,8 +17,7 @@ import lombok.Setter;
 @Entity
 public class ProductImage extends BaseAccountableEntity {
 
-    @Column(name = "image")
-    private String image;
+
 
     @Enumerated(EnumType.STRING)
     @Column(name = "image_type")
@@ -29,6 +28,10 @@ public class ProductImage extends BaseAccountableEntity {
     @ManyToOne
     @JoinColumn(name = "product_id",nullable = false)
     private Product product;
+
+    @OneToOne(fetch=FetchType.LAZY)
+    @JoinColumn(name = "file_entity_id",nullable = false,unique = true)
+    private FileEntity fileEntity;
 
 
 }

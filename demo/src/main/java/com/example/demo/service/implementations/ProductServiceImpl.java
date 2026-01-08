@@ -1,6 +1,7 @@
 package com.example.demo.service.implementations;
 
 import com.example.demo.domain.entities.Category;
+import com.example.demo.domain.entities.FileEntity;
 import com.example.demo.domain.entities.Product;
 import com.example.demo.domain.entities.ProductImage;
 import com.example.demo.domain.enums.FileSize;
@@ -16,6 +17,7 @@ import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.ProductMapper;
 import com.example.demo.mapperProfiles.ProductMapperImpl;
 import com.example.demo.repository.CategoryRepository;
+import com.example.demo.repository.FileRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.interfaces.FileService;
 import com.example.demo.service.interfaces.ProductService;
@@ -39,7 +41,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final FileService fileService;
+    private final FileRepository fileRepository;
     private final ProductMapper productMapper;
 
 
@@ -70,9 +72,9 @@ public class ProductServiceImpl implements ProductService {
         Product product=productMapper.toEntity(productDto);
         product.setProductImages(new ArrayList<>());
         product.getProductImages()
-                .add(createProductImage(productDto.primaryImage(),ImageType.PRIMARY,product));
+                .add(createProductImage(productDto.primaryImageId(),ImageType.PRIMARY,product));
         productDto
-                .images()
+                .imageIds()
                 .forEach(img->product
                         .getProductImages()
                         .add(createProductImage(img,ImageType.SECONDARY,product)));
@@ -90,15 +92,15 @@ public class ProductServiceImpl implements ProductService {
         return CompletableFuture.completedFuture(null);
 
     }
-    private ProductImage createProductImage(MultipartFile file, ImageType type, Product product){
-        if(!fileService.validateSize(file, FileSize.MB,1))
-            throw new InvalidFileSizeException("File size is invalid");
+    private ProductImage createProductImage(Long fileId,ImageType type, Product product){
 
-        if(!fileService.validateType(file,FileType.IMAGE))
-            throw new InvalidFileTypeException("File type is invalid");
+
+        FileEntity fileEntity=fileRepository.findById(fileId).orElseThrow(()->
+                new NotFoundException("Entity not found")
+        );
 
         ProductImage productImage=new ProductImage();
-        productImage.setImage(fileService.createFile(file));
+        productImage.setFileEntity(fileEntity);
         productImage.setImageType(type);
         productImage.setProduct(product);
         productImage.setCreatedAt(LocalDateTime.now());

@@ -19,8 +19,7 @@ public record PostProductDto(
         @NotNull Currency currency,
         @NotNull @Positive Long categoryId,
 
-        @NotNull MultipartFile primaryImage,
-
-        List<MultipartFile> images
+        @NotNull Long primaryImageId,
+        List<Long> imageIds
         ) {
 }
