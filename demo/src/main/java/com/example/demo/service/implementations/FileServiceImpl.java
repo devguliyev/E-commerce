@@ -96,7 +96,7 @@ public class FileServiceImpl implements FileService {
 
     }
 
-    private FileEntity createFile(MultipartFile file, UploadContext context){
+    private FileInfoDto createFile(MultipartFile file, UploadContext context){
 
         String newFileName=generateUniqueFileName(file.getOriginalFilename()); //generates unique filename
 
@@ -111,22 +111,21 @@ public class FileServiceImpl implements FileService {
         );
         fileRepository.save(fileEntity);
 
-        return fileEntity;
+        return fileEntityMapper.toFileInfoDto(fileEntity);
     }
 
     public FileInfoDto upload(MultipartFile file, UploadContext context){
 
         validateRule(file,context); //throw exception if validation fails
-        FileEntity fileEntity=createFile(file,context);
 
-        return fileEntityMapper.toFileInfoDto(fileEntity);
+        return createFile(file,context);
     }
 
     public List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context){
        files.forEach(file->validateRule(file,context));//throw exception if validation fails
 
        return files.stream()
-                .map(f->fileEntityMapper.toFileInfoDto(createFile(f,context)))
+                .map(f->createFile(f,context))
                 .collect(Collectors.toList());
     }
 
