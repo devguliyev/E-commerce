@@ -65,7 +65,7 @@ public class ProductController {
                 @PathVariable Long fileId
         ){
             productService.updateMainImage(id,fileId);
-            
+
             return ResponseEntity.noContent().build();
         }
 

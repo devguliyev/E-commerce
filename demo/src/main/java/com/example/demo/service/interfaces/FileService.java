@@ -1,6 +1,7 @@
 package com.example.demo.service.interfaces;
 
 import com.example.demo.domain.entities.FileEntity;
+import com.example.demo.domain.enums.FileStatus;
 import com.example.demo.domain.enums.UploadContext;
 import com.example.demo.dto.files.FileInfoDto;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,7 +16,7 @@ public interface FileService {
      FileEntity getFileEntity(Long id);
 
      void removeFile(Long id);
-
+     void changeStatus(FileEntity fileEntity, FileStatus fileStatus);
 
 
 //     boolean validateType(MultipartFile file, FileType type);

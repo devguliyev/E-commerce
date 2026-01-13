@@ -11,6 +11,7 @@ import com.example.demo.dto.products.GetProductItemDto;
 import com.example.demo.dto.products.PostProductDto;
 import com.example.demo.dto.products.PutProductDto;
 import com.example.demo.exception.EntityAlreadyExistsException;
+import com.example.demo.exception.FileAlreadyUsedException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.ProductMapper;
 import com.example.demo.repository.FileRepository;
@@ -19,6 +20,7 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.interfaces.CategoryService;
 import com.example.demo.service.interfaces.FileService;
 import com.example.demo.service.interfaces.ProductService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
@@ -112,6 +115,8 @@ public class ProductServiceImpl implements ProductService {
     private @NonNull ProductImage createProductImage(Long fileId, ImageType type, Product product){
 
         FileEntity fileEntity=fileService.getFileEntity(fileId);
+        if(fileEntity.getStatus()==FileStatus.USED)
+            throw new FileAlreadyUsedException(fileEntity.getId());
 
         ProductImage productImage=new ProductImage();
         productImage.setFileEntity(fileEntity);
@@ -119,8 +124,7 @@ public class ProductServiceImpl implements ProductService {
         productImage.setProduct(product);
         productImage.setCreatedAt(LocalDateTime.now());
 
-        fileEntity.setStatus(FileStatus.USED);
-        //fileRepository.save(fileEntity) no need Jpa Tracks the entity
+        fileService.changeStatus(fileEntity,FileStatus.USED);
 
         return productImage;
 

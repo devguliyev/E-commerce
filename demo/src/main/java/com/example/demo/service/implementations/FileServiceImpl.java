@@ -194,6 +194,12 @@ public class FileServiceImpl implements FileService {
                 .collect(Collectors.toList());
     }
 
+    public void changeStatus(FileEntity fileEntity,FileStatus fileStatus){
+        fileEntity.setStatus(fileStatus);
+        fileEntity.setUpdatedAt(LocalDateTime.now());
+        fileRepository.save(fileEntity);
+    }
+
 
 
 //    public String createFile(MultipartFile file){
