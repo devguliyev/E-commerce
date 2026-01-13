@@ -16,4 +16,5 @@ public interface ProductService {
     Page<GetProductItemDto> getAll(int page, int pageSize);
     void create(PostProductDto productDto);
     void update(Long id, PutProductDto productDto);
+    void updateMainImage(Long id, Long fileId);
 }

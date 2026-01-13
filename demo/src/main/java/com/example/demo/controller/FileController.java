@@ -6,10 +6,7 @@ import com.example.demo.service.interfaces.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -23,7 +20,7 @@ public class FileController {
     private final FileService fileService;
 
     @PostMapping
-    public ResponseEntity<FileInfoDto> Create(
+    public ResponseEntity<FileInfoDto> create(
             @RequestParam MultipartFile file,
             @RequestParam UploadContext context
             ){
@@ -37,6 +34,13 @@ public class FileController {
     ){
 
         return ResponseEntity.ok(fileService.upload(files,context));
+    }
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id
+    ){
+        fileService.removeFile(id);
+        return ResponseEntity.noContent().build();
     }
 
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 public class CategoryServiceImpl implements CategoryService
 {
     private final CategoryRepository categoryRepository;
-    public Category getCategoryForAssignment(Long id){
+    public Category getCategory(Long id){
         if(id == null)
             throw new IllegalArgumentException("Category Id is null");
 

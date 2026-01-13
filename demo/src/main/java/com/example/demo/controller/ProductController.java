@@ -59,30 +59,33 @@ public class ProductController {
             productService.update(id,productDto);
             return ResponseEntity.noContent().build();
         }
+    @PutMapping("/{id}/images/{fileId}/set-main")
+        public ResponseEntity<Void> updateMainImage(
+                @PathVariable Long id,
+                @PathVariable Long fileId
+        ){
+            productService.updateMainImage(id,fileId);
+            
+            return ResponseEntity.noContent().build();
+        }
+
 
 //        @GetMapping("/{id}/images")
 //        public ResponseEntity<Void> getImages(
-//                @RequestParam Long id
+//                @PathVariable Long id
 //        ){
 //
 //        }
 //        @PostMapping("/{id}/images")
 //        public ResponseEntity<Void> addImages(
-//                @RequestParam Long id
+//                @PathVariable Long id
 //        ){
 //
 //        }
 
-//        @PutMapping("/{id}/images/set-main")
-//        public ResponseEntity<Void> updateMainImage(
-//                @RequestParam Long id
-//        ){
-//
-//        }
-//
 //        @DeleteMapping("/{id}/images")
 //        public ResponseEntity<Void> deleteImages(
-//                @RequestParam Long id
+//                @PathVariable Long id
 //        ){
 //
 //        }

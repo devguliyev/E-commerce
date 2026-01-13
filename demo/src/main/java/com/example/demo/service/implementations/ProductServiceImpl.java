@@ -13,13 +13,14 @@ import com.example.demo.dto.products.PutProductDto;
 import com.example.demo.exception.EntityAlreadyExistsException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.ProductMapper;
-import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.FileRepository;
+import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.interfaces.CategoryService;
+import com.example.demo.service.interfaces.FileService;
 import com.example.demo.service.interfaces.ProductService;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,8 +33,9 @@ import java.util.ArrayList;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final ProductImageRepository productImageRepository;
     private final CategoryService categoryService;
-    private final FileRepository fileRepository;
+    private final FileService fileService;
     private final ProductMapper productMapper;
 
 
@@ -50,7 +52,6 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toGetProductDto(product);
 
     }
-
 
     public Page<GetProductItemDto> getAll(int page, int pageSize){
 
@@ -73,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
                         .getProductImages()
                         .add(createProductImage(img,ImageType.SECONDARY,product)));
 
-        Category category=categoryService.getCategoryForAssignment(productDto.categoryId());
+        Category category=categoryService.getCategory(productDto.categoryId());
 
         product.setCategory(category);
 
@@ -96,7 +97,7 @@ public class ProductServiceImpl implements ProductService {
        }
        if(!existed.getCategory().getId().equals(productDto.categoryId())){
            Category category=categoryService
-                   .getCategoryForAssignment(productDto.categoryId());
+                   .getCategory(productDto.categoryId());
 
            existed.setCategory(category);
         }
@@ -107,11 +108,10 @@ public class ProductServiceImpl implements ProductService {
 
 //       productMapper.toEntity()
     }
-    private ProductImage createProductImage(Long fileId,ImageType type, Product product){
 
-        FileEntity fileEntity=fileRepository.findById(fileId).orElseThrow(()->
-                new NotFoundException("Entity not found")
-        );
+    private @NonNull ProductImage createProductImage(Long fileId, ImageType type, Product product){
+
+        FileEntity fileEntity=fileService.getFileEntity(fileId);
 
         ProductImage productImage=new ProductImage();
         productImage.setFileEntity(fileEntity);
@@ -126,5 +126,24 @@ public class ProductServiceImpl implements ProductService {
 
     }
 
+    public void updateMainImage(Long id, Long fileId)
+    {
+        if(id==null)
+            throw new IllegalArgumentException("Product Id is null");
 
+        Product product=productRepository
+                .findById(id)
+                .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
+
+        ProductImage main=createProductImage(fileId,ImageType.PRIMARY,product);
+
+        ProductImage existedMain=productImageRepository
+                .findProductImageByProduct_IdAndImageType(product.getId(),ImageType.PRIMARY);
+        if(existedMain!=null){
+            fileService.removeFile(existedMain.getFileEntity().getId());
+            productImageRepository.delete(existedMain);
+        }
+        productImageRepository.save(main);
+
+    }
 }

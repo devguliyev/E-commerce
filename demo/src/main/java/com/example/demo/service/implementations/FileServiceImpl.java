@@ -9,12 +9,14 @@ import com.example.demo.domain.enums.UploadContext;
 import com.example.demo.dto.files.FileInfoDto;
 import com.example.demo.exception.InvalidFileSizeException;
 import com.example.demo.exception.InvalidFileTypeException;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.FileEntityMapper;
 import com.example.demo.repository.FileRepository;
 import com.example.demo.service.interfaces.FileService;
 
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectArgs;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,8 +37,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
-
-
 //    private final Path path;
 //    public FileServiceImpl (@Value("${file.upload-dir}") String root){
 //        path=Paths.get(root).toAbsolutePath().normalize();
@@ -74,6 +74,7 @@ public class FileServiceImpl implements FileService {
 //        };
 
     }
+
     private boolean validateSize(MultipartFile file, FileSize size,int value){
         if(file==null)
             throw new IllegalArgumentException("File is null");
@@ -117,19 +118,9 @@ public class FileServiceImpl implements FileService {
         return fileEntityMapper.toFileInfoDto(fileEntity);
     }
 
-    public FileInfoDto upload(MultipartFile file, UploadContext context){
-
-        validateRule(file,context); //throw exception if validation fails
-
-        return createFile(file,context);
-    }
-
-    public List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context){
-       files.forEach(file->validateRule(file,context));//throw exception if validation fails
-
-       return files.stream()
-                .map(f->createFile(f,context))
-                .collect(Collectors.toList());
+    private String generateUniqueFileName(String originalFileName ){
+        return UUID.randomUUID().toString()+ "." +   //random string
+                StringUtils.getFilenameExtension(originalFileName); //subtracting extension of fileName
     }
 
     private String saveToStorage(MultipartFile file,String fileName){
@@ -159,10 +150,51 @@ public class FileServiceImpl implements FileService {
         }
     }
 
-    private String generateUniqueFileName(String originalFileName ){
-        return UUID.randomUUID().toString()+ "." +   //random string
-                StringUtils.getFilenameExtension(originalFileName); //subtracting extension of fileName
+    private void deleteFromStorage(String path){
+        try{
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(path)
+                            .build()
+            );
+        }catch (Exception e){
+            //need logging
+            return;
+        }
+
+
     }
+
+    public FileEntity getFileEntity(Long id){
+        if(id==null)
+            throw new IllegalArgumentException("FileEntity Id is null");
+        return fileRepository.findById(id)
+                .orElseThrow(()->new NotFoundException(FileEntity.class.getSimpleName(),id));
+    }
+
+    public void removeFile(Long id){
+        FileEntity fileEntity=getFileEntity(id);
+        deleteFromStorage(fileEntity.getPath());
+        fileRepository.delete(fileEntity);
+    }
+
+    public FileInfoDto upload(MultipartFile file, UploadContext context){
+
+        validateRule(file,context); //throw exception if validation fails
+
+        return createFile(file,context);
+    }
+
+    public List<FileInfoDto> upload(List<MultipartFile> files, UploadContext context){
+       files.forEach(file->validateRule(file,context));//throw exception if validation fails
+
+       return files.stream()
+                .map(f->createFile(f,context))
+                .collect(Collectors.toList());
+    }
+
+
 
 //    public String createFile(MultipartFile file){
 //
