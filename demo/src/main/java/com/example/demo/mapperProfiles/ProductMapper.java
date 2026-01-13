@@ -7,15 +7,10 @@ import com.example.demo.domain.enums.Currency;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.valueObjects.Money;
 import com.example.demo.dto.productImages.GetImageInProductDto;
-import com.example.demo.dto.products.GetProductDto;
-import com.example.demo.dto.products.GetProductInCategoryDto;
-import com.example.demo.dto.products.GetProductItemDto;
-import com.example.demo.dto.products.PostProductDto;
+import com.example.demo.dto.products.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Named;
+import org.mapstruct.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -41,6 +36,12 @@ public interface ProductMapper {
     @Mapping(target="money",source = "productDto",qualifiedByName = "toMoney")
     Product toEntity(PostProductDto productDto);
 
+    @Mapping(target = "productImages",ignore = true)
+//    @Mapping(target = "category",ignore = true)
+    @Mapping(target="money",source = "productDto",qualifiedByName = "toMoney")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void toEntity(PutProductDto productDto, @MappingTarget Product entity);
+
     @Named("toPriceAmount")
     default BigDecimal toPriceAmount(Product product){
         return product.getMoney().getAmount();
@@ -49,8 +50,13 @@ public interface ProductMapper {
     default String toCurrencyString(Product product){
         return product.getMoney().getCurrency().toString();
     }
+
     @Named("toMoney")
     default Money toMoney(PostProductDto productDto){
+        return new Money(productDto.priceAmount(),productDto.currency());
+    }
+    @Named("toMoney")
+    default Money toMoney(PutProductDto productDto){
         return new Money(productDto.priceAmount(),productDto.currency());
     }
 
