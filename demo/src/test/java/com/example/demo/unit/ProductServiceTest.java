@@ -10,13 +10,14 @@ import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.valueObjects.Money;
 import com.example.demo.dto.products.PostProductDto;
 import com.example.demo.dto.products.PutProductDto;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.ProductMapper;
 import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.implementations.ProductServiceImpl;
 import com.example.demo.service.interfaces.CategoryService;
 import com.example.demo.service.interfaces.FileService;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import net.bytebuddy.pool.TypePool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,13 +25,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import javax.swing.text.html.Option;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -153,15 +153,6 @@ public class ProductServiceTest {
         existed.setCategory(oldCategory);
         existed.setProductImages(List.of(new ProductImage(),new ProductImage()));
 
-//        Product newProduct=new Product();
-//        newProduct.setId(productId);
-//        newProduct.setName(dto.name());
-//        newProduct.setSku(dto.sku());
-//        newProduct.setDescription(dto.description());
-//        newProduct.setCategory(category);
-//        newProduct.setName(dto.name());
-//        newProduct.setProductImages(List.of(new ProductImage(),new ProductImage()));
-
 
 
         when(productRepository.existsByName(dto.name())).thenReturn(false);
@@ -180,10 +171,34 @@ public class ProductServiceTest {
         verify(categoryService).getCategory(dto.categoryId());
         verify(productMapper).toEntity(dto, existed);
         verify(productRepository).save(existed);
+        verifyNoInteractions(fileService);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoMoreInteractions(categoryService);
 
         assertEquals(category,existed.getCategory());
         assertNotNull(existed.getUpdatedAt());
 
+
+
+    }
+
+    @Test
+    void shouldThrowTest_WhenProductNotFound(){
+        //GIVEN
+        Long productId=1L;
+        PutProductDto dto=mock(PutProductDto.class);
+
+        when(productRepository.findById(productId)).thenReturn(Optional.empty());
+
+        //WHEN & THEN
+        assertThrows(NotFoundException.class,()->productServiceImpl.update(productId,dto));
+
+        //THEN
+        verify(productRepository).findById(productId);
+        verifyNoMoreInteractions(productRepository);
+        verifyNoInteractions(categoryService);
+        verifyNoInteractions(productMapper);
+        verifyNoInteractions(fileService);
 
 
     }
