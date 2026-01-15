@@ -3,17 +3,20 @@ package com.example.demo.unit;
 import com.example.demo.domain.entities.Category;
 import com.example.demo.domain.entities.FileEntity;
 import com.example.demo.domain.entities.Product;
+import com.example.demo.domain.entities.ProductImage;
 import com.example.demo.domain.enums.Currency;
 import com.example.demo.domain.enums.FileStatus;
 import com.example.demo.domain.enums.ImageType;
 import com.example.demo.domain.valueObjects.Money;
 import com.example.demo.dto.products.PostProductDto;
+import com.example.demo.dto.products.PutProductDto;
 import com.example.demo.mapperProfiles.ProductMapper;
 import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.implementations.ProductServiceImpl;
 import com.example.demo.service.interfaces.CategoryService;
 import com.example.demo.service.interfaces.FileService;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,12 +26,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ProductServiceTest {
@@ -118,6 +121,70 @@ public class ProductServiceTest {
                 .filter(img->img.getImageType()== ImageType.PRIMARY)
                 .count());
         assertNotNull(saved.getCreatedAt());
+
+    }
+
+    @Test
+    public void shouldUpdateProduct(){
+        //GIVEN
+        Long productId=1L;
+        PutProductDto dto=new PutProductDto(
+                "new Phone",
+                "ch123",
+                "new Test desc",
+                BigDecimal.valueOf(100),
+                Currency.USD,
+                2L
+        );
+
+        Category category=new Category();
+        category.setId(dto.categoryId());
+        category.setName("new Test");
+
+        Category oldCategory=new Category();
+        oldCategory.setId(1L);
+        oldCategory.setName("Test");
+
+        Product existed=new Product();
+        existed.setId(productId);
+        existed.setName("Phone");
+        existed.setSku("ch123");
+        existed.setDescription("old Test desc");
+        existed.setCategory(oldCategory);
+        existed.setProductImages(List.of(new ProductImage(),new ProductImage()));
+
+//        Product newProduct=new Product();
+//        newProduct.setId(productId);
+//        newProduct.setName(dto.name());
+//        newProduct.setSku(dto.sku());
+//        newProduct.setDescription(dto.description());
+//        newProduct.setCategory(category);
+//        newProduct.setName(dto.name());
+//        newProduct.setProductImages(List.of(new ProductImage(),new ProductImage()));
+
+
+
+        when(productRepository.existsByName(dto.name())).thenReturn(false);
+        when(productRepository.findById(productId)).thenReturn(Optional.of(existed));
+        when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
+        doNothing().when(productMapper).toEntity(dto,existed);
+
+        //WHEN
+
+        productServiceImpl.update(productId,dto);
+
+        //THEN
+
+        verify(productRepository).findById(productId);
+        verify(productRepository).existsByName(dto.name());
+        verify(categoryService).getCategory(dto.categoryId());
+        verify(productMapper).toEntity(dto, existed);
+        verify(productRepository).save(existed);
+
+        assertEquals(category,existed.getCategory());
+        assertNotNull(existed.getUpdatedAt());
+
+
 
     }
 }
