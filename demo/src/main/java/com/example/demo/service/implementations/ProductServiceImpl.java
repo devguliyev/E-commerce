@@ -168,16 +168,16 @@ public class ProductServiceImpl implements ProductService {
         Product product=productRepository.findById(id)
                 .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
 
-        var deleteImages = product.getProductImages().stream()
-                .filter(image->image.getImageType()==ImageType.SECONDARY)
-                .toList();
-
         Set<Long> deleteFileIds = new HashSet<>();
 
-        deleteImages.forEach(img -> {
-            deleteFileIds.add(img.getFileEntity().getId());
-            product.getProductImages().remove(img);
+        product.getProductImages().removeIf(img -> {
+            if (img.getImageType() == ImageType.SECONDARY && imageIds.contains(img.getId())) {
+                deleteFileIds.add(img.getFileEntity().getId());
+                return true;
+            }
+            return false;
         });
+
 
         productRepository.save(product);
 
