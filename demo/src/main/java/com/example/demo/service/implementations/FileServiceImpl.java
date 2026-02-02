@@ -7,9 +7,7 @@ import com.example.demo.domain.enums.FileStatus;
 import com.example.demo.domain.enums.FileType;
 import com.example.demo.domain.enums.UploadContext;
 import com.example.demo.dto.files.FileInfoDto;
-import com.example.demo.exception.InvalidFileSizeException;
-import com.example.demo.exception.InvalidFileTypeException;
-import com.example.demo.exception.NotFoundException;
+import com.example.demo.exception.*;
 import com.example.demo.mapperProfiles.FileEntityMapper;
 import com.example.demo.repository.FileRepository;
 import com.example.demo.service.interfaces.FileService;
@@ -31,6 +29,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -173,6 +172,25 @@ public class FileServiceImpl implements FileService {
                 .orElseThrow(()->new NotFoundException(FileEntity.class.getSimpleName(),id));
     }
 
+    public List<FileEntity> getFileEntities(List<Long> ids){
+
+        var fileEntities = fileRepository.getFileEntitiesByIds(ids);
+
+        if (fileEntities == null || fileEntities.isEmpty())
+            throw new FilesNotFoundException(ids);
+
+        Set<Long> foundedIds = fileEntities.stream()
+                .map(FileEntity::getId)
+                .collect(Collectors.toSet());
+
+        ids.forEach(id -> {
+            if(!foundedIds.contains(id))
+                throw new NotFoundException(FileEntity.class.getSimpleName(),id);
+        });
+
+        return fileEntities;
+    }
+
     public void removeFile(Long id){
         FileEntity fileEntity=getFileEntity(id);
         deleteFromStorage(fileEntity.getPath());
@@ -198,6 +216,11 @@ public class FileServiceImpl implements FileService {
         fileEntity.setStatus(fileStatus);
         fileEntity.setUpdatedAt(LocalDateTime.now());
         fileRepository.save(fileEntity);
+    }
+
+    public void validateFileInUseStatus(FileEntity fileEntity){
+        if(fileEntity.getStatus()==FileStatus.USED)
+            throw new FileAlreadyUsedException(fileEntity.getId());
     }
 
 

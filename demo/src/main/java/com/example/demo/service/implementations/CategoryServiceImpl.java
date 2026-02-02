@@ -16,9 +16,8 @@ public class CategoryServiceImpl implements CategoryService
         if(id == null)
             throw new IllegalArgumentException("Category Id is null");
 
-        Category category=categoryRepository.findById(id).orElseThrow(
+        return categoryRepository.findById(id).orElseThrow(
                 ()-> new NotFoundException(Category.class.getSimpleName(),id)
         );
-        return category;
     }
 }

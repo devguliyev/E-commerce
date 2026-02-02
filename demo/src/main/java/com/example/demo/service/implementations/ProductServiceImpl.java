@@ -14,7 +14,6 @@ import com.example.demo.exception.EntityAlreadyExistsException;
 import com.example.demo.exception.FileAlreadyUsedException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.mapperProfiles.ProductMapper;
-import com.example.demo.repository.FileRepository;
 import com.example.demo.repository.ProductImageRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.interfaces.CategoryService;
@@ -27,8 +26,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -109,14 +112,12 @@ public class ProductServiceImpl implements ProductService {
        existed.setUpdatedAt(LocalDateTime.now());
        productRepository.save(existed);
 
-//       productMapper.toEntity()
     }
 
     private @NonNull ProductImage createProductImage(Long fileId, ImageType type, Product product){
 
         FileEntity fileEntity=fileService.getFileEntity(fileId);
-        if(fileEntity.getStatus()==FileStatus.USED)
-            throw new FileAlreadyUsedException(fileEntity.getId());
+        fileService.validateFileInUseStatus(fileEntity);
 
         ProductImage productImage=new ProductImage();
         productImage.setFileEntity(fileEntity);
@@ -130,8 +131,8 @@ public class ProductServiceImpl implements ProductService {
 
     }
 
-    public void updateMainImage(Long id, Long fileId)
-    {
+    @Transactional
+    public void updateMainImage(Long id, Long fileId) {
         if(id==null)
             throw new IllegalArgumentException("Product Id is null");
 
@@ -143,11 +144,67 @@ public class ProductServiceImpl implements ProductService {
 
         ProductImage existedMain=productImageRepository
                 .findProductImageByProduct_IdAndImageType(product.getId(),ImageType.PRIMARY);
+
         if(existedMain!=null){
-            fileService.removeFile(existedMain.getFileEntity().getId());
+            Long oldFileId=existedMain.getFileEntity().getId();
             productImageRepository.delete(existedMain);
+
+            TransactionSynchronizationManager.registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                           fileService.removeFile(oldFileId);
+                        }
+                    }
+            );
         }
         productImageRepository.save(main);
+    }
+    @Transactional
+    public void deleteProductImages(Long id, List<Long> imageIds){
+        if(id==null)
+            throw new IllegalArgumentException("Id is null");
+
+        Product product=productRepository.findById(id)
+                .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
+
+        var deleteImages = product.getProductImages().stream()
+                .filter(image->image.getImageType()==ImageType.SECONDARY)
+                .toList();
+
+        Set<Long> deleteFileIds = new HashSet<>();
+
+        deleteImages.forEach(img -> {
+            deleteFileIds.add(img.getFileEntity().getId());
+            product.getProductImages().remove(img);
+        });
+
+        productRepository.save(product);
+
+        TransactionSynchronizationManager
+                .registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                deleteFileIds.forEach(fileService::removeFile);
+            }
+        });
+    }
+
+    @Transactional void addProductImages(Long id, List<Long> fileIds){
+        if(id==null)
+            throw new IllegalArgumentException("Id is null");
+
+        Product product=productRepository.findById(id)
+                .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
+
+        List<FileEntity> fileEntities = fileService.getFileEntities(fileIds);
+
+        fileEntities.forEach(fileService::validateFileInUseStatus);
+
+        product.getProductImages().addAll(fileEntities.stream()
+                .map(fileEntity->createProductImage(fileEntity.getId(), ImageType.SECONDARY, product))
+                .toList());
+        productRepository.save(product);
 
     }
 }

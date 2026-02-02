@@ -17,15 +17,12 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.service.implementations.ProductServiceImpl;
 import com.example.demo.service.interfaces.CategoryService;
 import com.example.demo.service.interfaces.FileService;
-import net.bytebuddy.pool.TypePool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import javax.swing.text.html.Option;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -183,7 +180,7 @@ public class ProductServiceTest {
     }
 
     @Test
-    void shouldThrowTest_WhenProductNotFound(){
+    void shouldThrowNotFoundException_WhenProductNotFound(){
         //GIVEN
         Long productId=1L;
         PutProductDto dto=mock(PutProductDto.class);

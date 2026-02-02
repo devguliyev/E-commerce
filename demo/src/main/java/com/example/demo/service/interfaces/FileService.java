@@ -15,9 +15,13 @@ public interface FileService {
 
      FileEntity getFileEntity(Long id);
 
+     List<FileEntity> getFileEntities(List<Long> ids);
+
      void removeFile(Long id);
+
      void changeStatus(FileEntity fileEntity, FileStatus fileStatus);
 
+     void validateFileInUseStatus(FileEntity fileEntity);
 
 //     boolean validateType(MultipartFile file, FileType type);
 //     boolean validateSize(MultipartFile file, FileSize size, int value);
