@@ -44,9 +44,6 @@ public class ProductServiceImpl implements ProductService {
     private final FileService fileService;
     private final ProductMapper productMapper;
 
-
-
-
     public GetProductDto getById(Long id){
         if(id==null)
             throw new IllegalArgumentException("Id is null");
@@ -56,7 +53,6 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(()->new NotFoundException(Product.class.getSimpleName(),id));
 
         return productMapper.toGetProductDto(product);
-
     }
 
     public Page<GetProductItemDto> getAll(int page, int pageSize){
@@ -178,7 +174,6 @@ public class ProductServiceImpl implements ProductService {
             return false;
         });
 
-
         productRepository.save(product);
 
         TransactionSynchronizationManager
@@ -190,7 +185,8 @@ public class ProductServiceImpl implements ProductService {
         });
     }
 
-    @Transactional void addProductImages(Long id, List<Long> fileIds){
+    @Transactional
+    public void addProductImages(Long id, List<Long> fileIds){
         if(id==null)
             throw new IllegalArgumentException("Id is null");
 

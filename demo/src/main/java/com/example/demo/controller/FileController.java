@@ -24,7 +24,6 @@ public class FileController {
             @RequestParam MultipartFile file,
             @RequestParam UploadContext context
             ){
-
         return ResponseEntity.ok(fileService.upload(file,context));
     }
     @PostMapping("/multi")

@@ -4,18 +4,15 @@ import com.example.demo.dto.products.GetProductDto;
 import com.example.demo.dto.products.GetProductItemDto;
 import com.example.demo.dto.products.PostProductDto;
 import com.example.demo.dto.products.PutProductDto;
+import com.example.demo.requests.AddProductImagesRequest;
+import com.example.demo.requests.DeleteProductImagesRequest;
 import com.example.demo.service.interfaces.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequiredArgsConstructor
@@ -75,26 +72,24 @@ public class ProductController {
 //                @PathVariable Long id
 //        ){
 //
-//        }
-//        @PostMapping("/{id}/images")
-//        public ResponseEntity<Void> addImages(
-//                @PathVariable Long id
-//        ){
-//
-//        }
-
-//        @DeleteMapping("/{id}/images")
-//        public ResponseEntity<Void> deleteImages(
-//                @PathVariable Long id
-//        ){
-//
-//        }
+    //       }
 
 
 
+    @PostMapping("/{id}/images")
+    public ResponseEntity<Void> addImages(
+            @PathVariable Long id,
+            @Valid @RequestBody AddProductImagesRequest request){
+        productService.addProductImages(id, request.fileIds());
+        return ResponseEntity.ok().build();
+    }
 
-
-
-
+    @DeleteMapping("/{id}/images")
+    public ResponseEntity<Void> deleteImages(
+            @PathVariable Long id,
+            @Valid @RequestBody DeleteProductImagesRequest request){
+        productService.deleteProductImages(id, request.imageIds());
+        return ResponseEntity.noContent().build();
+    }
 
 }
