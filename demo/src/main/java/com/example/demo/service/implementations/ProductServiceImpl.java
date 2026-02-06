@@ -6,10 +6,8 @@ import com.example.demo.domain.entities.Product;
 import com.example.demo.domain.entities.ProductImage;
 import com.example.demo.domain.enums.FileStatus;
 import com.example.demo.domain.enums.ImageType;
-import com.example.demo.dto.products.GetProductDto;
-import com.example.demo.dto.products.GetProductItemDto;
-import com.example.demo.dto.products.PostProductDto;
-import com.example.demo.dto.products.PutProductDto;
+import com.example.demo.domain.enums.SortDirection;
+import com.example.demo.dto.products.*;
 import com.example.demo.exception.EntityAlreadyExistsException;
 import com.example.demo.exception.FileAlreadyUsedException;
 import com.example.demo.exception.NotFoundException;
@@ -25,6 +23,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -32,6 +31,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.example.demo.specs.ProductSpecification.filterBy;
 
 @Service
 @RequiredArgsConstructor
@@ -55,10 +56,14 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toGetProductDto(product);
     }
 
-    public Page<GetProductItemDto> getAll(int page, int pageSize){
+    public Page<GetProductItemDto> getAll(ProductQueryDto queryDto){
 
-        Pageable pageable=PageRequest.of(page,pageSize);
-        return productRepository.findAll(pageable).map(productMapper::toGetProductItemDto);
+        Sort sort = queryDto.sortDir() == SortDirection.DESC
+                ? Sort.by(queryDto.sortBy().getSortField()).descending()
+                : Sort.by(queryDto.sortBy().getSortField());
+
+        Pageable pageable=PageRequest.of(queryDto.page(), queryDto.pageSize(), sort);
+        return productRepository.findAll(filterBy(queryDto),pageable).map(productMapper::toGetProductItemDto);
     }
 
     public void create(PostProductDto productDto){

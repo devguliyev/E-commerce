@@ -43,7 +43,7 @@ public class Product extends BaseAccountableEntity {
     @JoinColumn(name="category_id")
     private Category category;
 
-    @OneToMany(mappedBy = "product",fetch = FetchType.EAGER,cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<ProductImage> productImages;
 
 
